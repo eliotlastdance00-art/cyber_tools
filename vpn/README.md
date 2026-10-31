@@ -194,9 +194,57 @@ Panelde: **Inbounds → Add Inbound**
 | uTLS fingerprint | `chrome` |
 | SpiderX | `/` |
 
-> **Dest saýlamak:** TLS 1.3 goldaýan, uly, "şübhe döretmeýän" saýt: `www.microsoft.com`, `www.apple.com`, `www.cloudflare.com`, `www.bing.com`.
+> **Dest saýlamak:** TLS 1.3 goldaýan, uly, "şübhe döretmeýän" saýt: `www.microsoft.com`, `www.apple.com`, `www.bing.com`, `www.samsung.com`, `www.nvidia.com`.
 > Serwerden bar bolmaly: `curl -I https://www.microsoft.com` — 200/301 gaýtarmaly.
 > Bir näçe inbound goýup, dürli SNI bilen synap gör (bloklansa çalt çalyşmaly).
+
+#### SNI näme we nädip saýlamaly
+
+**SNI** (*Server Name Indication*) — TLS protokolynyň giňeltmesi (RFC 6066).
+Brauzer bir IP-däki https saýta birigeninde, haýsy saýty isleýänini **ClientHello-da açyk görnüşde** (şifrlenmän) aýdýar — sebäbi bir IP-de birnäçe saýt bolup biler we serwer haýsy sertifikaty bermelidigini saýlamaly bolýar.
+
+- Şonuň üçin DPI SNI-a seredip **haýsy domena gidýändigiňi görýär** — domen boýunça bloklama hut şu ýerde bolýar.
+- ECH (*Encrypted Client Hello*) muny ýapýar, ýöne häzir hemme ýerde goldanmaýar.
+
+**Reality-de SNI nämä gerek?** Reality öz sertifikatyny ulanmaýar — ol hakyky saýtyň TLS handshake-yny "karz alýar":
+
+1. Klient SNI hökmünde `www.microsoft.com` iberýär.
+2. Reality serweri şol handshake-y `dest` (`www.microsoft.com:443`) saýtyna geçirýär.
+3. Yzyna **hakyky Microsoft sertifikaty** we hakyky TLS 1.3 handshake gaýdýar.
+
+Netijede DPI adaty HTTPS birikmäni görýär — "proxy belligi" ýok. Üstesine, DPI serwere göni birigip barlasa (**active probing**), şol SNI bilen hakyky microsoft jogabyny alýar.
+
+> Şol sebäpli **dest we SNI hökmany suratda deň bolmaly**: `dest = www.microsoft.com:443`, `serverNames = www.microsoft.com`.
+
+**SNI saýlamagyň 5 şerti:**
+
+| # | Şert | Nädip barlamaly |
+|---|---|---|
+| 1 | TLS 1.3 + X25519 goldaýar | `bash vpn/sni-test.sh` |
+| 2 | ALPN `h2` goldaýar | şol bir skript |
+| 3 | Sertifikat hakyky CA-dan | şol bir skript |
+| 4 | **Müşderiniň torbasynda bloklanan DÄL** ← iň esasy | telefondan VPN-siz `https://<SNI>` açyp gör |
+| 5 | Uly, "bitewilikli" domen, seniňki däl | microsoft, apple, samsung, nvidia, adobe... |
+
+**4-nji şert näme üçin möhüm?** Türkmenistanda köplenç "gadagan sanaw" däl, **ak sanaw** işleýär. Eger `www.microsoft.com` hem şol ýerde bloklanan bolsa, klient handshake-iň ilkinji ädiminde ýykylýar — serwerde bolsa hemme zat "işleýän" görünýär. Şol sebäpli SNI-ny **müşderiniň torbasyndan** barlamaly.
+
+**Goşmaça maslahatlar:**
+
+- Serwere ýakyn (ping az) domen saýla — her birikmede goşmaça gidiş-geliş ýüze çykýar.
+- CDN arkasyndaky domenler (Cloudflare) kabul edilýär, ýöne käbir ýagdaýda geçiş durnuksyz bolýar → ilki CDN-siz domeni synap gör.
+- Öň VPN/proxy hyzmaty hökmünde tanalýan domenleri **ulanma**.
+- Bir SNI-ni ýyllap ulanma — 2–3 aýdan çalyşmak DPI-de "bellik" döretmez.
+- Bir serwerde **2–3 dürli SNI** bilen inbound goý: biri bloklansa beýlekisi işlär.
+
+**Barlag skripti:**
+
+```bash
+bash vpn/sni-test.sh                        # taýýar kandidatlar
+bash vpn/sni-test.sh www.apple.com www.bing.com
+bash vpn/sni-test.sh --dest                 # saýlamak boýunça gysga maslahat
+```
+
+Çykyş: DNS, TCP 443, TLS 1.3, ALPN, sertifikat, möhlet, ping we netije (GOWY / ORTA / ERBET).
 
 Soň **Add Client**: e-poçta (`user-01`), Flow `xtls-rprx-vision`, trafik çäklendirmesi. Soň QR kody ýa-da `vless://...` linki bilen paýlaş.
 
@@ -215,7 +263,7 @@ Soň **Add Client**: e-poçta (`user-01`), Flow `xtls-rprx-vision`, trafik çäk
 bash vpn/check.sh
 ```
 
-Çykýar: portlar, hyzmatlar, BBR, internet tizligi, DNS, ping, Reality SNI-lary, panel ýagdaýy. Şeýle hem telefondan synap gör — işlemeýän zady maslahatlaşmazdan öň barla.
+Çykýar: portlar, hyzmatlar, BBR, internet tizligi, DNS, ping, Reality SNI-lary, panel ýagdaýy. SNI kandidatlaryny jikme-jik barlamak üçin: `bash vpn/sni-test.sh`. Şeýle hem telefondan synap gör — işlemeýän zady maslahatlaşmazdan öň barla.
 
 Goşmaça: `bash vpn/check.sh --speed` — tizlik ölçegi; `--quiet` — diňe problemalary görkez.
 
@@ -317,6 +365,7 @@ Bu iň möhüm bölüm — hyzmat satmazdan öň hökmany okaň.
 | Klient "connected" ýöne internet ýok | DNS ýa-da routing | Klientde DNS `1.1.1.1` / `8.8.8.8` goý; `check.sh` bilen serweriň özüni barla |
 | Ilkinji gün işleýär, soň "timeout" | IP bloklandy (SNI-dan) | Täze IP (providerden), SNI/port üýtget, AmneziaWG görnüşine geç |
 | Diňe 443 açylýar, beýleki portlar ýok | Provider firewall | Provider panelinde port aç; UFW-de barla |
+| Serwerde hemme zat gowy, klient birigip bilmeýär | **SNI müşderiniň torbasynda bloklanan** | Telefondan VPN-siz şol domeni açyp gör; açylmasa başga SNI (`sni-test.sh`) |
 | Tizlik 1–2 Mbit | 100 Mbit port + DPI throttling | Has gowy plan (1 Gbit), başga ýer (DE/NL), BBR açykmy barla |
 | `curl` serwerde işleýär, telefondan ýok | Ýerli ISP bloky | XHTTP+CDN ýa-da AmneziaWG; başga port |
 | Panel açylmaýar | Panel diňe 127.0.0.1-de; SSH tunel gerek | `ssh -N -L PORT:127.0.0.1:PORT root@IP`, soň `http://127.0.0.1:PORT/ÝOL`; barla: `systemctl status x-ui` |
@@ -341,6 +390,7 @@ Bu iň möhüm bölüm — hyzmat satmazdan öň hökmany okaň.
 | `harden.sh` | Serweri taýýarlaýar: BBR, swap, UFW, fail2ban, awtomatik täzelleme |
 | `setup.sh` | Menýu: `harden`, `3xui`, `marzban`, `backup`, `check`, `info` |
 | `check.sh` | Diagnostika: portlar, hyzmatlar, tizlik, DNS, ping, Reality SNI |
+| `sni-test.sh` | Reality SNI kandidatlaryny barlaýar: TLS 1.3, ALPN h2, sertifikat, ping |
 
 **setup.sh parametrleri:** `--yes` (soramazdan), `--dry-run` (hiç zat üýtgetmän görkez), `--panel-port N`,
 `--panel-public`, `--domain` + `--email` (panel SSL), `--installer FILE` (ýerli install.sh), `--out DIR` (backup).
@@ -350,5 +400,6 @@ sudo bash vpn/harden.sh --yes         # serwer taýýarla
 sudo bash vpn/setup.sh 3xui --yes     # panel gur (maglumatlary ekrana çykarýar)
 sudo bash vpn/setup.sh info           # panel maglumatlaryny ýene gör
 sudo bash vpn/check.sh                # barla (--speed goşup bilersiň)
+bash vpn/sni-test.sh                  # Reality SNI kandidatlaryny barla
 sudo bash vpn/setup.sh backup         # backup al
 ```
