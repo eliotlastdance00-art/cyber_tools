@@ -21,6 +21,7 @@ Näme goldaýar:
 
 Auth: Authorization: Bearer <TOKEN>  ýa-da login arkaly alnan cookie.
 Token: MOCK_TOKEN (adaty: testtoken).
+Tohum: MOCK_SEED=1 — başlangyçda nusgalyk inbound + 3 müşderi döredýär.
 
 Işletmek:
   MOCK_TOKEN=testtoken PORT=18080 python3 vpn/dev/mock-xui-api.py
@@ -44,6 +45,7 @@ HOST = os.environ.get("HOST", "0.0.0.0")
 PORT = int(os.environ.get("PORT", "18080"))
 ADMIN_USER = os.environ.get("MOCK_USER", "admin")
 ADMIN_PASS = os.environ.get("MOCK_PASS", "secret")
+SEED = os.environ.get("MOCK_SEED", "0") not in ("", "0", "false", "no")
 
 NEXT_ID = [1]
 INBOUNDS: dict[int, dict] = {}
@@ -95,6 +97,65 @@ def find_inbound_for(email: str):
         if any(c.get("email") == email for c in clients_of(ib)):
             return ib
     return None
+
+
+# -------------------------------- seed -------------------------------------
+def seed_demo() -> None:
+    """Preview boş görünmez ýaly nusgalyk inbound + müşderiler döredýär."""
+    if INBOUNDS:
+        return
+    import time as _time
+
+    clients = []
+    for email, gb, days in [("user-01", 100, 30), ("user-02", 100, 30), ("ahmet-03", 50, 14)]:
+        clients.append(
+            {
+                "id": str(uuid.uuid4()),
+                "email": email,
+                "subId": secrets.token_hex(8),
+                "flow": "xtls-rprx-vision",
+                "limitIp": 2,
+                "totalGB": gb * 1024 ** 3,
+                "expiryTime": (int(_time.time()) + days * 86400) * 1000,
+                "enable": True,
+                "tgId": "",
+                "reset": 0,
+            }
+        )
+    inbound = {
+        "id": NEXT_ID[0],
+        "enable": True,
+        "remark": "tm-reality-443 (nusga)",
+        "listen": "",
+        "port": 443,
+        "protocol": "vless",
+        "expiryTime": 0,
+        "total": 0,
+        "settings": {"clients": clients, "decryption": "none", "fallbacks": []},
+        "streamSettings": {
+            "network": "tcp",
+            "security": "reality",
+            "realitySettings": {
+                "show": False,
+                "xver": 0,
+                "dest": "www.microsoft.com:443",
+                "target": "www.microsoft.com:443",
+                "serverNames": ["www.microsoft.com"],
+                "privateKey": "SEEDpriv" + secrets.token_urlsafe(32)[:36],
+                "shortIds": [secrets.token_hex(8)],
+                "settings": {
+                    "publicKey": "SEEDpub" + secrets.token_urlsafe(32)[:36],
+                    "fingerprint": "chrome",
+                    "serverName": "",
+                    "spiderX": "/",
+                },
+            },
+        },
+        "sniffing": {"enabled": True, "destOverride": ["http", "tls", "quic"]},
+    }
+    NEXT_ID[0] += 1
+    INBOUNDS[inbound["id"]] = inbound
+    print(f"  seed: inbound #{inbound['id']} :443 + {len(clients)} müşderi", flush=True)
 
 
 # ------------------------------- dashboard ---------------------------------
@@ -338,6 +399,8 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/__reset":
             INBOUNDS.clear()
             NEXT_ID[0] = 1
+            if SEED:
+                seed_demo()
             # forma iberilse yza gaýtar, API çağyryşy bolsa JSON
             if (self.headers.get("Content-Type") or "").startswith("application/x-www-form-urlencoded"):
                 self.send_response(303)
@@ -431,11 +494,14 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
+    if SEED:
+        seed_demo()
     srv = ThreadingHTTPServer((HOST, PORT), Handler)
     print(f"3X-UI mock API · http://{HOST}:{PORT}")
     print(f"  dashboard : http://127.0.0.1:{PORT}/")
     print(f"  panel base: {PANEL_BASE or '/'}")
     print(f"  token     : {TOKEN}")
+    print(f"  seed      : {'açyk' if SEED else 'ýapyk'}")
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

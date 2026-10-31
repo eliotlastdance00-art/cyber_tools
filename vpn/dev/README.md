@@ -7,11 +7,14 @@ Hakyky VPS ýa-da 3X-UI panel bolmazdan `vpn/provision.sh`-yň işleýşini barl
 |---|---|
 | `mock-xui-api.py` | 3X-UI v3 API-siniň ýönekeý emulýatory + HTML dashboard. Daşarky paket gerek däl, diňe Python 3. |
 | `bin/xray` | `xray x25519` ýerine ýasama açar jübüti (provision.sh şu binany tapýar) |
+| `serve.sh` | Preview/ýerli işletmek üçin gysga ýol: host/port/token/seed bir ýerde |
 
 ## Işletmek
 
 ```bash
-# 1) mock API (adaty: 0.0.0.0:18080, token testtoken)
+# 1) mock API (adaty: 0.0.0.0:18080, token testtoken, seed açyk)
+bash vpn/dev/serve.sh
+# ýa-da göni:
 python3 vpn/dev/mock-xui-api.py
 
 # 2) başga terminalda — provision.sh-y mock-a garşy işlet
@@ -24,7 +27,8 @@ bash vpn/provision.sh list   --api-base http://127.0.0.1:18080 --token testtoken
 ```
 
 Dashboard: <http://127.0.0.1:18080/> — inbound-lary, müşderileri we endpoint-leri görkezýär,
-«Maglumatlary arassala» düwmesi bilen ýagdaýy nula gaýtarýar.
+«Maglumatlary arassala» düwmesi bilen ýagdaýy nula gaýtarýar (seed açyk bolsa, nusgalyk
+maglumatlar täzeden döredilýär). Health: <http://127.0.0.1:18080/health>.
 
 ## Sazlamalar (environment)
 
@@ -35,6 +39,14 @@ Dashboard: <http://127.0.0.1:18080/> — inbound-lary, müşderileri we endpoint
 | `MOCK_TOKEN` | `testtoken` | Bearer token |
 | `MOCK_PANEL_BASE` | `/panelx` | Panel ýoly (boş goýsaň: kök) |
 | `MOCK_USER` / `MOCK_PASS` | `admin` / `secret` | Login üçin |
+| `MOCK_SEED` | `1` (`serve.sh`), `0` (göni) | Başlangyçda nusgalyk inbound + 3 müşderi döretmek |
+
+`serve.sh` şu bahalary belläp goýýar: `HOST=0.0.0.0`, `PORT=18080`, `MOCK_TOKEN=testtoken`,
+`MOCK_SEED=1`, `MOCK_PANEL_BASE=/panelx`. Islendigini üýtgedip bilersiň:
+
+```bash
+PORT=19000 MOCK_TOKEN=supersecret MOCK_SEED=0 bash vpn/dev/serve.sh
+```
 
 ## Näme goldanýar
 

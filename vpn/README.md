@@ -360,7 +360,7 @@ sudo bash vpn/provision.sh reality --dry-run
 ```
 
 > **Hakyky serwer bolmasa nädip barlamaly?** `vpn/dev/` papkasynda 3X-UI API-siniň
-> ýönekeý emulýatory bar: `python3 vpn/dev/mock-xui-api.py` → <http://127.0.0.1:18080/>
+> ýönekeý emulýatory bar: `bash vpn/dev/serve.sh` → <http://127.0.0.1:18080/>
 > (dashboard + token `testtoken`). Soň `provision.sh`-y şol ýere garşy işledip görüň —
 > jikme-jik: [`dev/README.md`](dev/README.md).
 >
