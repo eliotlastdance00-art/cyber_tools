@@ -359,6 +359,11 @@ sudo bash vpn/provision.sh link --remark apple-8443 --email ahmet-02 --qr
 sudo bash vpn/provision.sh reality --dry-run
 ```
 
+> **Hakyky serwer bolmasa nädip barlamaly?** `vpn/dev/` papkasynda 3X-UI API-siniň
+> ýönekeý emulýatory bar: `python3 vpn/dev/mock-xui-api.py` → <http://127.0.0.1:18080/>
+> (dashboard + token `testtoken`). Soň `provision.sh`-y şol ýere garşy işledip görüň —
+> jikme-jik: [`dev/README.md`](dev/README.md).
+>
 > `--dry-run` API-a hiç zat ibermeýär — diňe gönderiljek JSON-y görkezýär.
 > Skript API jogabyny barlaýar: port başga inboundda bar bolsa, şol remark bilen
 > inbound eýýäm bar bolsa — düşnükli ýalňyşlyk bilen durýar.
@@ -450,6 +455,7 @@ sudo bash vpn/provision.sh reality --dry-run
 | `check.sh` | Diagnostika: portlar, hyzmatlar, tizlik, DNS, ping, Reality SNI |
 | `sni-test.sh` | Reality SNI kandidatlaryny barlaýar: TLS 1.3, ALPN h2, sertifikat, ping |
 | `provision.sh` | 3X-UI API arkaly Reality inbound we müşderiler döredýär, `vless://` link çykarýar |
+| `dev/mock-xui-api.py` | **Diňe test üçin** 3X-UI API emulýatory (hakyky VPS-siz synag) |
 
 **setup.sh parametrleri:** `--yes` (soramazdan), `--dry-run` (hiç zat üýtgetmän görkez), `--panel-port N`,
 `--panel-public`, `--domain` + `--email` (panel SSL), `--installer FILE` (ýerli install.sh), `--out DIR` (backup).

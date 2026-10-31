@@ -16,6 +16,7 @@ doly gollanma + taýýar skriptler:
   - `vpn/check.sh` — diagnostika (portlar, BBR, DNS, Reality SNI, tizlik)
   - `vpn/sni-test.sh` — Reality üçin SNI kandidatlaryny barlamak
   - `vpn/provision.sh` — 3X-UI API arkaly inbound/müşderi döretmek, `vless://` link
+  - `vpn/dev/` — hakyky VPS-siz synag üçin 3X-UI API emulýatory (dashboard bilen)
 
 Çalt başlangyç:
 
