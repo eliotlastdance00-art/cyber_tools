@@ -248,6 +248,8 @@ bash vpn/sni-test.sh --dest                 # saýlamak boýunça gysga maslahat
 
 Soň **Add Client**: e-poçta (`user-01`), Flow `xtls-rprx-vision`, trafik çäklendirmesi. Soň QR kody ýa-da `vless://...` linki bilen paýlaş.
 
+> ⚡ **Isleseň elli basma:** bularyň hemmesini bir buýruk bilen awtomatik etmek üçin aşakdaky [5.9-njy bölüme](#59-awtomatik-döretmek--provisionsh) seret.
+
 ### 5.5. AmneziaWG goşmak (ätiýaçlyk protokol)
 
 3x-ui 3.x wersiýasynda **AmneziaWG** içinde bar (userspace, kernel moduly gerek däl).
@@ -307,6 +309,59 @@ Bu iň möhüm bölüm — hyzmat satmazdan öň hökmany okaň.
 3. Her müşderä **2 profil** ber (Reality + AmneziaWG / CDN), biri işlemese beýlekisi.
 4. Bloklanan IP-ni derrew çalyşmak üçin **snapshot + täze IP** meýilnamasyny öňünden taýýarla.
 5. Satuwda **kanuny töwekgelçiligi** aç-açan aýt (aşakda 10-njy bölüm).
+
+### 5.9. Awtomatik döretmek — `provision.sh`
+
+Panelde elli basmak ýerine ähli zady bir buýruk bilen (3X-UI API arkaly):
+
+```bash
+sudo bash vpn/provision.sh reality --sni www.microsoft.com --clients 3 --gb 100 --days 30
+```
+
+Näme edýär:
+
+1. `xray x25519` bilen Reality açar jübüti (private + public) döredýär
+2. 16 simwolly `shortId`, her müşderä UUID + subId
+3. inbound-y `POST /panel/api/inbounds/add` arkaly goşýar (v3-de `target`, v2-de `dest` düşünýär)
+4. `vless://` linkini ýerlikli parametrler bilen ýasaýar we `/root/vpn-links/`-a ýazýar (chmod 600)
+
+| Buýruk | Näme edýär |
+|---|---|
+| `reality` | Täze VLESS+Reality inbound (+ müşderiler we linkler) |
+| `client --email X` | Bar bolan inbound-a müşderi goşýar |
+| `list` | Inbound-lary we müşderileri görkezýär |
+| `link --email X --qr` | Linki (we bolsa QR-y) çykarýar |
+| `delete-client --email X` | Müşderini pozýar |
+| `test` | API baglanyşygyny we auth-ny barlaýar |
+
+**Parametrler:** `--sni`, `--port`, `--remark`, `--clients N`, `--gb N`, `--days N`,
+`--limit-ip N`, `--addr HOST`, `--no-vision`, `--qr`, `--json`, `--dry-run`,
+`--link-dir DIR`, `--inbound N`, `--env-file FILE`, `--token TOKEN`, `--api-base URL`.
+
+**Auth:** `/etc/x-ui/install-result.env`-daky `XUI_API_TOKEN` (Bearer). Token ýok/ýaramaz
+bolsa login + parol + CSRF (`/csrf-token`) arkaly girýär. Panel diňe `127.0.0.1`-de
+diňleýändigi üçin skript serweriň özünde işlemeli.
+
+**Mysallar:**
+
+```bash
+# 3 müşderi, her birine 100 GB / 30 gün
+sudo bash vpn/provision.sh reality --sni www.microsoft.com --clients 3 --gb 100 --days 30
+
+# ikinji SNI bilen goşmaça inbound (biri bloklansa beýlekisi işlär)
+sudo bash vpn/provision.sh reality --sni www.apple.com --port 8443 --remark apple-8443
+
+# bar bolan inbound-a täze müşderi + QR
+sudo bash vpn/provision.sh client --remark apple-8443 --email ahmet-02 --gb 50 --days 30
+sudo bash vpn/provision.sh link --remark apple-8443 --email ahmet-02 --qr
+
+# hiç zat ibermän, diňe payload-y görmek
+sudo bash vpn/provision.sh reality --dry-run
+```
+
+> `--dry-run` API-a hiç zat ibermeýär — diňe gönderiljek JSON-y görkezýär.
+> Skript API jogabyny barlaýar: port başga inboundda bar bolsa, şol remark bilen
+> inbound eýýäm bar bolsa — düşnükli ýalňyşlyk bilen durýar.
 
 ---
 
@@ -371,6 +426,9 @@ Bu iň möhüm bölüm — hyzmat satmazdan öň hökmany okaň.
 | Panel açylmaýar | Panel diňe 127.0.0.1-de; SSH tunel gerek | `ssh -N -L PORT:127.0.0.1:PORT root@IP`, soň `http://127.0.0.1:PORT/ÝOL`; barla: `systemctl status x-ui` |
 | `x-ui` "command not found" | Gurnama düşmedi | `bash vpn/setup.sh 3xui --yes` gaýtadan |
 | 3X-UI gurnalmaýar, `curl` 404/403 | GitHub/DPI blok | Installer-i başga ýerden göçürip al, `--installer /root/install.sh` bilen gur |
+| `provision.sh`: 401 unauthorized | Token ýaramaz ýa-da scope çäkli | Panelde Settings → API Tokens-dan **admin** scope bilen täze token al, `--token` ber |
+| `provision.sh`: "port in use" | Port başga inboundda | Başga port saýla ýa-da köne inbound-y poz |
+| `provision.sh`: "login şowsuz" | Parol nädogry / 2FA açyk | Token ulan (2FA-ly panelde login işlemeýär) |
 
 ---
 
@@ -391,6 +449,7 @@ Bu iň möhüm bölüm — hyzmat satmazdan öň hökmany okaň.
 | `setup.sh` | Menýu: `harden`, `3xui`, `marzban`, `backup`, `check`, `info` |
 | `check.sh` | Diagnostika: portlar, hyzmatlar, tizlik, DNS, ping, Reality SNI |
 | `sni-test.sh` | Reality SNI kandidatlaryny barlaýar: TLS 1.3, ALPN h2, sertifikat, ping |
+| `provision.sh` | 3X-UI API arkaly Reality inbound we müşderiler döredýär, `vless://` link çykarýar |
 
 **setup.sh parametrleri:** `--yes` (soramazdan), `--dry-run` (hiç zat üýtgetmän görkez), `--panel-port N`,
 `--panel-public`, `--domain` + `--email` (panel SSL), `--installer FILE` (ýerli install.sh), `--out DIR` (backup).
@@ -401,5 +460,6 @@ sudo bash vpn/setup.sh 3xui --yes     # panel gur (maglumatlary ekrana çykarýa
 sudo bash vpn/setup.sh info           # panel maglumatlaryny ýene gör
 sudo bash vpn/check.sh                # barla (--speed goşup bilersiň)
 bash vpn/sni-test.sh                  # Reality SNI kandidatlaryny barla
+sudo bash vpn/provision.sh reality --sni www.microsoft.com   # inbound-y awtomatik döret
 sudo bash vpn/setup.sh backup         # backup al
 ```

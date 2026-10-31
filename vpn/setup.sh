@@ -55,6 +55,9 @@ Parametrler:
   --installer FILE      ýerli install.sh nusgasy (internet ýok bolsa)
   --out DIR             backup katalogi (adaty: /root)
 
+Bellik:
+  Reality inbound we müşderi döretmek üçin: bash provision.sh --help
+
 Mysallar:
   sudo bash setup.sh harden
   sudo bash setup.sh 3xui --yes

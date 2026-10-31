@@ -14,6 +14,8 @@ doly gollanma + taýýar skriptler:
   - `vpn/harden.sh` — BBR, swap, UFW, fail2ban, awtomatik täzelenme
   - `vpn/setup.sh` — 3X-UI / Marzban gurmak, backup, info
   - `vpn/check.sh` — diagnostika (portlar, BBR, DNS, Reality SNI, tizlik)
+  - `vpn/sni-test.sh` — Reality üçin SNI kandidatlaryny barlamak
+  - `vpn/provision.sh` — 3X-UI API arkaly inbound/müşderi döretmek, `vless://` link
 
 Çalt başlangyç:
 
@@ -21,4 +23,5 @@ doly gollanma + taýýar skriptler:
 sudo bash vpn/harden.sh --yes      # serweri taýýarla
 sudo bash vpn/setup.sh 3xui --yes  # paneli gur (kredensiallary çykarýar)
 sudo bash vpn/check.sh             # barla
+sudo bash vpn/provision.sh reality --sni www.microsoft.com  # inbound awtomatik
 ```
