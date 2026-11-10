@@ -16,7 +16,7 @@
 - [x] `core/result` (sealed `Result<T>`: Ok/Err, fold, map) + `core/error` (sealed `AppFailure`, value equality) — see `lib/core/`
 - [x] `SplitIntoSentencesUseCase` (`SplitIntoSentencesUseCase`) + `TextSentence` offsets — port of `tts_chunks.py` rules extended with positions (needed for TTS highlighting); 20+ unit tests (EN/RU/TK, ellipses, abbreviations, quotes, decimals, CRLF, paragraph boundaries)
 - [ ] Crash-free test harness: `ProviderScope` overrides helper (deferred to Phase 2, when providers land)
-- **DoD (partial):** splitter green via CI (this repo cannot run Flutter locally). Coverage ≥80% gate arrives in Phase 2 with `very_good_coverage` on domain+data. Golden parity vs Python implementation superseded by explicit offset-round-trip tests.
+- **DoD (partial):** splitter green via CI run 42833029855 (27 tests pass). Coverage ≥80% gate arrives in Phase 2 with `very_good_coverage` on domain+data. Golden parity vs Python implementation superseded by explicit offset-round-trip tests.
 
 ## Phase 2 — Data layer: drift DB + document repository (PR #3)
 - [ ] drift schema v1 (`documents`, `document_text`, `settings`, `purchase_state`) + migrations + in-memory test DB
