@@ -7,10 +7,10 @@ class LibraryScreen extends StatelessWidget {
   const LibraryScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => const Scaffold(
+  Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: Text('VoiceReader'),
-      actions: [
+      title: const Text('VoiceReader'),
+      actions: const [
         IconButton(
           icon: Icon(Icons.search),
           tooltip: 'Search your library',
@@ -18,7 +18,7 @@ class LibraryScreen extends StatelessWidget {
         ),
       ],
     ),
-    body: Center(
+    body: const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
