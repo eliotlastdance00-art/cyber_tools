@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-
-import 'core/theme/app_theme.dart';
-import 'features/library/presentation/library_screen.dart';
+import 'package:voicereader/core/theme/app_theme.dart';
+import 'package:voicereader/features/library/presentation/library_screen.dart';
 
 /// Root widget. Navigation will move to typed go_router routes
 /// in Phase 4 (see docs/ROADMAP.md).

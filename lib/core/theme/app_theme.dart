@@ -33,7 +33,6 @@ abstract final class AppTheme {
       outline: BrandColors.navyRaised,
     );
     return ThemeData(
-      useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: BrandColors.navy,
       appBarTheme: const AppBarTheme(
