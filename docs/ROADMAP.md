@@ -2,15 +2,15 @@
 
 > Rule: **no phase starts before the previous one is merged with green CI.** Each phase ends with something you can demo. Architecture + designs were APPROVED 2026-11-10; Phase 0 is implemented and awaiting the first green CI run.
 
-## Phase 0 — Repo tidy + scaffold + CI gate (implemented — awaiting first green CI)
+## Phase 0 — Repo tidy + scaffold + CI gate (✅ DONE — first green run on 2026-11-10)
 - [x] Full wipe per user decision: Python CLI and web MVP removed (recoverable via git history)
 - [x] Repo root IS the Flutter package; `docs/` + `design/` moved to root
 - [x] `android/` rendered from official **Flutter 3.47.9 templates** (Gradle 9.3.1, AGP 9.1.0, Kotlin 2.4.0 · namespace/applicationId `com.voicereader.app`). `gradlew`/`gradle-wrapper.jar` are intentionally uncommitted — the Flutter SDK injects them on first build
 - [x] `.fvmrc` = 3.47.9 · `analysis_options.yaml` (very_good_analysis 11, strict casts/inference/raw-types) · minimal `pubspec.yaml` (deps are added per phase, never speculative)
 - [x] Theme tokens per `design/` (navy/coral/teal) · app shell · placeholder Library screen · widget smoke test
 - [x] `.github/workflows/ci.yml` (format → analyze → test --coverage → debug APK, pinned SDK) and `release.yml` (tag `v*` → AAB)
-- [ ] First green CI run confirmed by reviewer — authoring sandbox has **no Flutter SDK**, so GitHub Actions is the source of truth for builds
-- **DoD:** CI green on the PR (analyze + tests + debug APK artifact).
+- [x] First green CI run confirmed — run 42827030529: format ✓ · analyze --fatal-infos ✓ · widget tests ✓ · debug APK built & uploaded as artifact ✓ (~4m49s)
+- **DoD met:** analyze + tests + debug APK artifact all green via GitHub Actions.
 
 ## Phase 1 — Core domain + failures + sentence splitter (PR #2)
 - [ ] `core/result`, `core/error` (sealed `AppFailure`), `core/utils` (ULID, debounce)
