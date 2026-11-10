@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand navy (#0B1B33) — matches BrandColors.navy in lib/core/theme/app_theme.dart.
+         Kept here so the native splash matches the first Flutter frame instead of
+         flashing a white screen (see docs/INSTALL_TK.md §2.7). -->
+    <color name="brand_navy">#0B1B33</color>
+</resources>

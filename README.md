@@ -20,6 +20,21 @@ fvm flutter run
 > First `flutter build`/`flutter run` auto-injects `gradlew` + `gradle-wrapper.jar`
 > (from the Flutter SDK cache) into `android/` — they are intentionally not committed.
 
+### Install the app on a phone (no Play Store needed)
+
+1. **Actions → CI → Run workflow** (or wait for the latest green run) →
+   download the **`voicereader-debug-apk`** artifact → **unzip it** →
+   `app-debug.apk` is the installable file. The `.zip` itself will *not* install.
+2. For a release-signed-by-debug-key build: **Actions → Release → Run workflow**
+   → download the artifact → **`VoiceReader.apk`**.
+3. Copy to the phone → tap → allow "install unknown apps". If it says
+   *"App not installed"*, uninstall the previous build first (the CI debug
+   keystore changes between runs).
+
+**`.aab` files never install on a phone** — they are Play Console uploads only.
+Troubleshooting flow, symptom → cause table and the `adb` commands:
+[`docs/INSTALL_TK.md`](docs/INSTALL_TK.md).
+
 CI (`.github/workflows/ci.yml`) runs on every push/PR: pinned Flutter via `.fvmrc`, `dart format` check, `flutter analyze --fatal-infos`, `flutter test --coverage`, and a debug APK build (artifact). Releases: tag `v*` → `release.yml` builds an App Bundle (see file for Play Console signing secrets).
 
 ## License

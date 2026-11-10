@@ -15,11 +15,14 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // Package id is final (docs/ARCHITECTURE.md §12) — changing it later
+        // would lose every existing install and Play listing.
         applicationId = "com.voicereader.app"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // minSdk is pinned on purpose: docs/ARCHITECTURE.md §12 says 24
+        // (Android 7.0). Using the moving `flutter.minSdkVersion` default made
+        // the docs and the actual APK disagree — a classic "it won't install"
+        // cause. Bump deliberately, never implicitly.
+        minSdk = 24
         targetSdk = flutter.targetSdkVersion
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
         // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)

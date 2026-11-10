@@ -1,14 +1,33 @@
 name: Release
 
+# Two ways to run this:
+#   1) Push a tag `v*`  → builds AAB (Play) + installable APK, attaches both to a
+#      GitHub Release (draft) and keeps them as workflow artifacts.
+#   2) Actions → Release → "Run workflow" (workflow_dispatch) → same artifacts,
+#      no tag needed. This is the fastest way to get an APK onto a phone for a
+#      smoke test.
+#
+# Why both an AAB *and* an APK: an .aab can NOT be installed on a phone by hand
+# (it is a Play upload format only). Before this, the only hand-installable
+# build was the CI debug APK buried inside a 66 MB artifact zip — the most
+# common reason a "downloaded app" refuses to open. See docs/INSTALL_TK.md.
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version_suffix:
+        description: 'Optional artifact name suffix (e.g. smoke1)'
+        required: false
+        default: ''
 
 jobs:
   appbundle:
-    name: Build release App Bundle
+    name: Build release AAB + installable APK
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
+    permissions:
+      contents: write # needed only by the "publish GitHub Release" step
     steps:
       - uses: actions/checkout@v4
 
@@ -29,10 +48,11 @@ jobs:
         run: flutter test
 
       # Release builds are signed with an upload keystore stored as GitHub
-      # secrets — NEVER commit it. Enable after you create the keystore:
+      # secrets — NEVER commit it. Until the secrets exist the release build is
+      # debug-signed, which is fine for internal/smoke testing but NOT for Play.
       #   1) keytool -genkey -v -keystore voicereader-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
       #   2) Secrets: ANDROID_KEYSTORE_B64 (base64 -w0 jks), KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD
-      #   3) android/key.properties written by the step below, enable it.
+      #   3) uncomment the two steps below + the signing config in android/app/build.gradle.kts
       #
       # - name: Decode upload keystore
       #   run: echo "$ANDROID_KEYSTORE_B64" | base64 -d > android/app/voicereader-upload.jks
@@ -41,19 +61,59 @@ jobs:
       #   run: printf 'storeFile=voicereader-upload.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > android/key.properties
       #   env: { KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}, KEY_ALIAS: ${{ secrets.KEY_ALIAS }}, KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }} }
 
-      - name: Build App Bundle (debug-signed until keystore is configured)
+      - name: Build App Bundle (Play upload format)
         run: flutter build appbundle --release
 
-      - name: Upload AAB artifact
+      - name: Build APK (hand-installable on a phone)
+        run: flutter build apk --release
+
+      - name: Name artifacts with version + commit
+        run: |
+          set -euo pipefail
+          VER=$(grep -E '^version:' pubspec.yaml | awk '{print $2}' | cut -d+ -f1)
+          BASE="voicereader-${VER}-${GITHUB_SHA::7}"
+          SUF="${{ github.event.inputs.version_suffix }}"
+          if [ -n "$SUF" ]; then BASE="${BASE}-${SUF}"; fi
+          # Artifact names may not contain '/', so sanitise the ref (branch names
+          # like arena/xxx would otherwise break upload-artifact).
+          ARTIFACT=$(printf '%s' "$BASE" | tr '/' '-')
+          mkdir -p dist
+          cp build/app/outputs/bundle/release/app-release.aab "dist/${BASE}.aab"
+          # ONE friendly filename for humans: this is the file people must tap on
+          # their phone. The .aab is Play-only and deliberately named so.
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/VoiceReader.apk"
+          (cd dist && sha256sum ./* > SHA256SUMS.txt)
+          echo "ARTIFACT_NAME=${ARTIFACT}" >> "$GITHUB_ENV"
+          ls -lh dist
+          cat dist/SHA256SUMS.txt
+
+      - name: Upload AAB + APK as workflow artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: voicereader-aab-${{ github.ref_name }}
-          path: build/app/outputs/bundle/release/app-release.aab
+          name: ${{ env.ARTIFACT_NAME }}
+          path: dist/*
+          if-no-files-found: error
+
+      # On a tag push, also create a GitHub Release so the APK is reachable from
+      # the Releases page without logging in to Actions. Draft on purpose:
+      # review, then publish. `--clobber` keeps re-runs idempotent.
+      - name: Publish GitHub Release (tag pushes only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release create "${GITHUB_REF_NAME}" \
+            --draft \
+            --title "VoiceReader ${GITHUB_REF_NAME}" \
+            --notes "Install on Android: download **VoiceReader.apk** below (NOT the .aab — that one is only for Google Play). Verify with SHA256SUMS.txt. If install fails with 'app not installed', uninstall the previous build first (debug keystore changes between builds)." \
+            dist/*.apk dist/*.aab dist/SHA256SUMS.txt \
+          || gh release upload "${GITHUB_REF_NAME}" dist/*.apk dist/*.aab dist/SHA256SUMS.txt --clobber
 
       # Publish to Play internal track once secrets are in place:
       # - uses: r0adkll/upload-google-play@v1
       #   with:
       #     serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
       #     packageName: com.voicereader.app
-      #     releaseFiles: build/app/outputs/bundle/release/app-release.aab
+      #     releaseFiles: dist/*.aab
       #     track: internal

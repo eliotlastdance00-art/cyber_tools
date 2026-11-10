@@ -227,7 +227,10 @@ purchase_state(key TEXT PK, value TEXT);                                -- cache
 6. `flutter test --coverage` → upload to Codecov-or-artifact; `very_good_coverage --min-coverage 80` on domain+data
 7. `flutter build apk --debug` → artifact `voicereader-debug-apk` (proves the app actually builds)
 
-**release.yml** (on tag `v*`): `flutter build appbundle --release`, AAB + SHA-256 artifact, changelog from tag; Play upload is a commented-out step you enable with `PLAY_SERVICE_ACCOUNT_JSON` secret (supply via fastlane or `r0adkll/upload-google-play`). Never commit keystores; `android/key.properties` → `.gitignore`d, injected via CI secrets.
+**release.yml** (on tag `v*` **or** `workflow_dispatch`): `flutter build appbundle --release`
+**and** `flutter build apk --release` (an `.aab` cannot be sideloaded on a phone — without an
+APK there is no way to hand-test a build), `VoiceReader.apk` + AAB + `SHA256SUMS.txt` artifacts,
+and on a tag a draft GitHub Release carrying them, changelog from tag; Play upload is a commented-out step you enable with `PLAY_SERVICE_ACCOUNT_JSON` secret (supply via fastlane or `r0adkll/upload-google-play`). Never commit keystores; `android/key.properties` → `.gitignore`d, injected via CI secrets.
 
 Plus: Dependabot (pub ecosystem, weekly), PR template (checklist: tests added? screenshots? changelog?), branch protection on `main` (1 review + green CI).
 
@@ -252,5 +255,7 @@ Plus: Dependabot (pub ecosystem, weekly), PR template (checklist: tests added? s
 1. Platform scope → **Android-only v1** (+desktop possible later via pdfrx)
 2. Repo → **full wipe**, Flutter package at repo root (§3)
 3. Monetization → **Play Billing non-consumable, one-time $19** (policy-compliant)
-4. Identity → package id **com.voicereader.app**, name **VoiceReader**, minSdk **24** (template default)
+4. Identity → package id **com.voicereader.app**, name **VoiceReader**, minSdk **24**
+   (now *pinned* in `android/app/build.gradle.kts`; Phase 0.1 — it silently used
+   `flutter.minSdkVersion`, so the documented 24 was not guaranteed)
 5. Designs + this architecture → **APPROVED**
