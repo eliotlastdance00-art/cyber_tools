@@ -1,5 +1,5 @@
 // VoiceReader service worker — caches the app shell for offline use.
-const CACHE = 'voicereader-v1';
+const CACHE = 'voicereader-v2';
 const ASSETS = [
   './',
   'index.html',
