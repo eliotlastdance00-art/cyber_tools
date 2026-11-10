@@ -66,3 +66,11 @@ python tts_chunks.py kitap.pdf --output-dir netije --categories categories.examp
 Her tema üçin aýratyn bukjada belgili `.txt` faýllar döredilýär; hiç bir açar söze gabat gelmedik sözlemler `uncategorized` bukjasyna düşýär. Her kategoriýada sözlemleriň kitapdaky özara tertibi saklanýar, emma dürli kategoriýalar boýunça asyl global tertip saklanmaýar. Bir sözlem birnäçe kategoriýa gabat gelse, olaryň hersinde ýerleşdirilýär. Isleseňiz `--dedupe` goşup, birmeňzeş gaýtalanýan sözlemleri kategoriýalaşdyrmazdan öň aýryp bilersiňiz.
 
 Bu **açar söz** usulydyr, AI bilen many seljermesi däl: sözleriň dürlenişleri awtomat tanalmaýar, kontekst ýa-da inkär göz öňünde tutulmaýar. Açar sözler söz araçäkleri boýunça, uly-kiçi harpa seretmezden deňeşdirilýär; zerur görnüşleri aýratyn goşuň. Kategoriýa atlarynda diňe latyn harplaryny, sanlary, `_` we `-` ulanyň. Bu mysaldaky kategoriýalar diňe başlangyç nusgasydyr; netijäni barlaň.
+
+## VoiceReader — PDF/dokumenti sese öwürýän web programma
+
+`voicereader/` bukjasynda satylýan taýýar önüm bar: PDF, TXT, Markdown faýllaryny we teksti brauzerde ses bilen okaýar (hiç haýsy maglumat serwere iberilmeýär). Mugt dereje: her dokumentde 1,500 harpa çenli; Pro — bir gezeklik töleg bilen çäksiz.
+
+- Ulanmagyny görmek: `cd voicereader && python3 -m http.server 8080` → `http://localhost:8080`
+- Gumroad-da satmagyň ýoly (hasapla, marketing, real garaýyş): `voicereader/SELL.md`
+- Önümiň gurluşy we Pro açarynyň işi: `voicereader/README.md`
