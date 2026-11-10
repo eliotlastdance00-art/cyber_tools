@@ -1,7 +1,10 @@
+import 'package:meta/meta.dart';
+
 /// A sentence entity with its span inside the (normalized) document text.
 ///
 /// The reader highlights sentences during speech; [startChar]/[endChar] index
 /// into the normalized text produced by `splitDocumentIntoSentences`.
+@immutable
 final class Sentence {
   const Sentence({
     required this.index,

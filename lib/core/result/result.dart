@@ -1,9 +1,12 @@
+import 'package:meta/meta.dart';
+
 import 'package:voicereader/core/error/app_failure.dart';
 
 /// Typed result used across every layer instead of exceptions.
 ///
 /// `switch` exhaustively matches [Ok] and [Err] — the compiler forces every
 /// call site to handle failure paths explicitly.
+@immutable
 sealed class Result<T> {
   const Result();
 
@@ -38,6 +41,7 @@ sealed class Result<T> {
   };
 }
 
+@immutable
 final class Ok<T> extends Result<T> {
   const Ok(this.value);
 
@@ -50,6 +54,7 @@ final class Ok<T> extends Result<T> {
   int get hashCode => Object.hash(Ok<T>, value);
 }
 
+@immutable
 final class Err<T> extends Result<T> {
   const Err(this.failure);
 

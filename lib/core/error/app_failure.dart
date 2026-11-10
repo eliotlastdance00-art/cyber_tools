@@ -1,7 +1,10 @@
+import 'package:meta/meta.dart';
+
 /// Base type for all typed failures in VoiceReader.
 ///
 /// Layers never throw across boundaries; repositories and use cases return
 /// [AppFailure] inside `Result<T>`. Keeps error paths explicit and testable.
+@immutable
 sealed class AppFailure {
   const AppFailure();
 
