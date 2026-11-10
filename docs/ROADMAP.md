@@ -11,6 +11,28 @@
 - [x] `.github/workflows/ci.yml` (format → analyze → test --coverage → debug APK, pinned SDK) and `release.yml` (tag `v*` → AAB)
 - [x] First green CI run confirmed — run 42827030529: format ✓ · analyze --fatal-infos ✓ · widget tests ✓ · debug APK built & uploaded as artifact ✓ (~4m49s)
 - **DoD met:** analyze + tests + debug APK artifact all green via GitHub Actions.
+- ⚠️ **Gap found after "Phase 0 done":** CI being green proves the APK *builds*,
+  not that it *installs and opens* on a device. The only hand-installable build
+  was a 66 MB APK inside an artifact **zip**, no Release/tag existed, and the
+  `.aab` can never be sideloaded — the classic "the app won't open" report.
+  Full analysis: [`docs/INSTALL_TK.md`](INSTALL_TK.md).
+
+## Phase 0.1 — Installability + launch path (PR on branch `arena/e29e0055-cyber-tools`)
+- [x] `release.yml`: `workflow_dispatch` trigger, builds **both** `.aab` (Play) and
+      `VoiceReader.apk` (hand-installable), `SHA256SUMS.txt`, GitHub Release (draft)
+      on `v*` tags, artifact names sanitised
+- [x] `ci.yml`: `workflow_dispatch` so a fresh debug APK can be built on demand
+- [x] `minSdk` pinned to **24** in `app/build.gradle.kts` (docs said 24, the build
+      used a moving SDK default)
+- [x] Launch path: white splash → brand navy `#0B1B33` (values + values-night +
+      drawable/drawable-v21) so opening the app no longer flashes white / looks hung
+- [ ] **Needs a device:** install an APK from the new `Release` artifact and
+      confirm it opens; attach a screenshot to the PR (this is the missing DoD line)
+- [ ] Stable upload keystore in secrets (today every CI run signs with a fresh
+      random debug keystore → APKs cannot upgrade each other)
+- [ ] Commit `pubspec.lock` (reproducible dependency resolution)
+- [ ] Friendly crash screen (`runZonedGuarded` + `ErrorWidget.builder`) instead of
+      a blank screen on a startup exception
 
 ## Phase 1 — Core domain + failures + sentence splitter (PR #2)
 - [ ] `core/result`, `core/error` (sealed `AppFailure`), `core/utils` (ULID, debounce)
