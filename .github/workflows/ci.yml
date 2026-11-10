@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'arena/**']
+  pull_request:
+
+jobs:
+  analyze-test-build:
+    name: Analyze · Test · Build debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter (pinned via .fvmrc)
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: .fvmrc
+          channel: stable
+          cache: true
+
+      - name: Pub get
+        run: flutter pub get
+
+      - name: Format check
+        run: dart format . --output=none --set-exit-if-changed
+
+      - name: Analyze (fatal infos)
+        run: |
+          set +e
+          output=$(flutter analyze --no-pub --fatal-infos 2>&1)
+          code=$?
+          echo "$output"
+          # Re-emit every diagnostic as a workflow annotation so it is visible
+          # in the check run (logs are not accessible from everywhere).
+          echo "$output" | grep -E '^\s*(error|warning|info|hint)\s*•' | while IFS= read -r line; do
+            lvl=$(printf '%s' "$line" | sed -E 's/^\s*(error|warning|info|hint).*/\1/')
+            msg=$(printf '%s' "$line" | sed -E 's/^\s*(error|warning|info|hint)\s*•\s*([^•]+)\s*•.*/\2/')
+            loc=$(printf '%s' "$line" | sed -n -E 's/.*•\s*([^•]+):[0-9]+:[0-9]+\s*•.*/\1/p')
+            ln=$(printf '%s' "$line" | sed -n -E 's/.*:([0-9]+):[0-9]+\s*•.*/\1/p')
+            rule=$(printf '%s' "$line" | sed -n -E 's/.*•\s*([a-z_]+)\s*$/\1/p')
+            file=$(printf '%s' "$loc" | sed -E 's#^/home/runner/work/[^/]+/[^/]+/##')
+            case "$lvl" in
+              error) cmd=error ;;
+              warning) cmd=warning ;;
+              *) cmd=notice ;;
+            esac
+            printf '::%s file=%s,line=%s::%s (%s)\n' "$cmd" "$file" "${ln:-1}" "${msg:-analyze}" "${rule:-analyze}"
+          done
+          exit $code
+
+      - name: Unit & widget tests
+        run: flutter test --coverage
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/lcov.info
+          if-no-files-found: ignore
+
+      # The debug APK build proves the Android scaffold (Gradle 9.3.1 / AGP
+      # 9.1.0) actually works. First run also injects gradlew + wrapper jar.
+      - name: Build debug APK
+        run: flutter build apk --debug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: voicereader-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk

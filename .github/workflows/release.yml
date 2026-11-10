@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  appbundle:
+    name: Build release App Bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter (pinned via .fvmrc)
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: .fvmrc
+          channel: stable
+          cache: true
+
+      - name: Pub get
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --fatal-infos
+
+      - name: Test
+        run: flutter test
+
+      # Release builds are signed with an upload keystore stored as GitHub
+      # secrets — NEVER commit it. Enable after you create the keystore:
+      #   1) keytool -genkey -v -keystore voicereader-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+      #   2) Secrets: ANDROID_KEYSTORE_B64 (base64 -w0 jks), KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD
+      #   3) android/key.properties written by the step below, enable it.
+      #
+      # - name: Decode upload keystore
+      #   run: echo "$ANDROID_KEYSTORE_B64" | base64 -d > android/app/voicereader-upload.jks
+      #   env: { ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }} }
+      # - name: Write key.properties
+      #   run: printf 'storeFile=voicereader-upload.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > android/key.properties
+      #   env: { KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}, KEY_ALIAS: ${{ secrets.KEY_ALIAS }}, KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }} }
+
+      - name: Build App Bundle (debug-signed until keystore is configured)
+        run: flutter build appbundle --release
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: voicereader-aab-${{ github.ref_name }}
+          path: build/app/outputs/bundle/release/app-release.aab
+
+      # Publish to Play internal track once secrets are in place:
+      # - uses: r0adkll/upload-google-play@v1
+      #   with:
+      #     serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+      #     packageName: com.voicereader.app
+      #     releaseFiles: build/app/outputs/bundle/release/app-release.aab
+      #     track: internal
