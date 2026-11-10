@@ -21,7 +21,7 @@ abstract final class BrandColors {
 
 abstract final class AppTheme {
   static ThemeData get dark {
-    final scheme = const ColorScheme.dark(
+    const scheme = ColorScheme.dark(
       surface: BrandColors.navy,
       primary: BrandColors.coral,
       onPrimary: Color(0xFF1A0E08),

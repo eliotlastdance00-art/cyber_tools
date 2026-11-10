@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'package:voicereader/core/theme/app_theme.dart';
 
 /// Phase 0 placeholder — the real library (import, search, progress) ships
@@ -10,16 +9,15 @@ class LibraryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const Scaffold(
     appBar: AppBar(
-      title: const Text('VoiceReader'),
-      actions: const [
+      title: Text('VoiceReader'),
+      actions: [
         IconButton(
           icon: Icon(Icons.search),
-          onPressed: null,
           tooltip: 'Search your library',
         ),
       ],
     ),
-    body: const Center(
+    body: Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
