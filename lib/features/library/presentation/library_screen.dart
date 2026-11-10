@@ -11,10 +11,7 @@ class LibraryScreen extends StatelessWidget {
     appBar: AppBar(
       title: Text('VoiceReader'),
       actions: [
-        IconButton(
-          icon: Icon(Icons.search),
-          tooltip: 'Search your library',
-        ),
+        IconButton(icon: Icon(Icons.search), tooltip: 'Search your library'),
       ],
     ),
     body: Center(
