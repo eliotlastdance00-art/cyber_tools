@@ -72,7 +72,10 @@ abstract final class AppTheme {
           fontWeight: FontWeight.w800,
           letterSpacing: -0.5,
         ),
-        titleLarge: TextStyle(color: BrandColors.text, fontWeight: FontWeight.w700),
+        titleLarge: TextStyle(
+          color: BrandColors.text,
+          fontWeight: FontWeight.w700,
+        ),
         bodyLarge: TextStyle(color: BrandColors.text, height: 1.55),
         bodyMedium: TextStyle(color: BrandColors.text, height: 1.55),
         bodySmall: TextStyle(color: BrandColors.muted),
