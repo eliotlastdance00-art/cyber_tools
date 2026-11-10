@@ -10,8 +10,12 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter:
     sdk: flutter
+  meta: ^1.15.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   very_good_analysis: ^11.0.0
+
+flutter:
+  uses-material-design: true
