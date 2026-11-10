@@ -39,7 +39,7 @@ final _trailingWord = RegExp(
   unicode: true,
 );
 final _dottedAcronym = RegExp(r'^(?:[A-Za-z]\.){2,}$', unicode: true);
-final _singleInitial = RegExp(r'^[A-Z]\.$', unicode: true);
+final _singleInitial = RegExp(r'^\p{Lu}\.$', unicode: true);
 final _paragraphBreak = RegExp(r'\n\n+');
 final _whitespaceRun = RegExp(r'\s+');
 
@@ -92,11 +92,16 @@ List<TextSentence> splitSentencesInParagraph(
     if (punctuation.startsWith('.')) {
       final before = paragraph.substring(start, match.start + 1);
       final word = _trailingWord.firstMatch(before);
-      final token = word == null ? '' : word.group(0)!.toLowerCase();
+      final tokenRaw = word == null ? '' : word.group(0)!;
+      final token = tokenRaw.toLowerCase();
       if (_abbreviations.contains(token)) continue;
       if (_dottedAcronym.hasMatch(token)) continue;
+      // Single initials (A. Smith) do not end a sentence. The original
+      // Python lower-cased the token before testing case, which silently
+      // disabled this guard; we test the raw token instead (and accept any
+      // Unicode uppercase letter).
       final afterMatch = paragraph.substring(end).trim().isNotEmpty;
-      if (_singleInitial.hasMatch(token) && afterMatch) continue;
+      if (_singleInitial.hasMatch(tokenRaw) && afterMatch) continue;
     }
     _addTrimmed(sentences, paragraph, start, end, baseOffset);
     start = end;
