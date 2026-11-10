@@ -9,12 +9,10 @@ class VoiceReaderApp extends StatelessWidget {
   const VoiceReaderApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'VoiceReader',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark,
-      home: const LibraryScreen(),
-    );
-  }
+  Widget build(BuildContext context) => MaterialApp(
+    title: 'VoiceReader',
+    debugShowCheckedModeBanner: false,
+    theme: AppTheme.dark,
+    home: const LibraryScreen(),
+  );
 }

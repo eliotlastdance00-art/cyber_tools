@@ -4,8 +4,6 @@ import 'app.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  FlutterError.onError = (details) {
-    FlutterError.presentError(details);
-  };
+  FlutterError.onError = FlutterError.presentError;
   runApp(const VoiceReaderApp());
 }

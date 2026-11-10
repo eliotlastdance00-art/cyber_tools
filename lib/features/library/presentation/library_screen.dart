@@ -8,40 +8,38 @@ class LibraryScreen extends StatelessWidget {
   const LibraryScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('VoiceReader'),
-        actions: const [
-          IconButton(
-            icon: Icon(Icons.search),
-            onPressed: null,
-            tooltip: 'Search your library',
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: const Text('VoiceReader'),
+      actions: const [
+        IconButton(
+          icon: Icon(Icons.search),
+          onPressed: null,
+          tooltip: 'Search your library',
+        ),
+      ],
+    ),
+    body: const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.menu_book_rounded, size: 72, color: BrandColors.coral),
+          SizedBox(height: 16),
+          Text(
+            'Listen to anything.',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: BrandColors.text,
+            ),
+          ),
+          SizedBox(height: 6),
+          Text(
+            'PDF & text, read aloud — private, offline.',
+            style: TextStyle(color: BrandColors.muted),
           ),
         ],
       ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.menu_book_rounded, size: 72, color: BrandColors.coral),
-            SizedBox(height: 16),
-            Text(
-              'Listen to anything.',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: BrandColors.text,
-              ),
-            ),
-            SizedBox(height: 6),
-            Text(
-              'PDF & text, read aloud — private, offline.',
-              style: TextStyle(color: BrandColors.muted),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }

@@ -27,7 +27,20 @@ jobs:
         run: dart format . --output=none --set-exit-if-changed
 
       - name: Analyze (fatal infos)
-        run: flutter analyze --fatal-infos
+        run: |
+          set +e
+          flutter analyze --fatal-infos 2>&1 | tee analyze.log
+          code=${PIPESTATUS[0]}
+          echo "flutter analyze exit code: $code"
+          exit $code
+
+      - name: Upload analyze log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: analyze-log
+          path: analyze.log
+          if-no-files-found: ignore
 
       - name: Unit & widget tests
         run: flutter test --coverage
