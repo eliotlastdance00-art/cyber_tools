@@ -29,18 +29,26 @@ jobs:
       - name: Analyze (fatal infos)
         run: |
           set +e
-          flutter analyze --fatal-infos 2>&1 | tee analyze.log
-          code=${PIPESTATUS[0]}
-          echo "flutter analyze exit code: $code"
+          output=$(flutter analyze --no-pub --fatal-infos 2>&1)
+          code=$?
+          echo "$output"
+          # Re-emit every diagnostic as a workflow annotation so it is visible
+          # in the check run (logs are not accessible from everywhere).
+          echo "$output" | grep -E '^\s*(error|warning|info|hint)\s*•' | while IFS= read -r line; do
+            lvl=$(printf '%s' "$line" | sed -E 's/^\s*(error|warning|info|hint).*/\1/')
+            msg=$(printf '%s' "$line" | sed -E 's/^\s*(error|warning|info|hint)\s*•\s*([^•]+)\s*•.*/\2/')
+            loc=$(printf '%s' "$line" | sed -n -E 's/.*•\s*([^•]+):[0-9]+:[0-9]+\s*•.*/\1/p')
+            ln=$(printf '%s' "$line" | sed -n -E 's/.*:([0-9]+):[0-9]+\s*•.*/\1/p')
+            rule=$(printf '%s' "$line" | sed -n -E 's/.*•\s*([a-z_]+)\s*$/\1/p')
+            file=$(printf '%s' "$loc" | sed -E 's#^/home/runner/work/[^/]+/[^/]+/##')
+            case "$lvl" in
+              error) cmd=error ;;
+              warning) cmd=warning ;;
+              *) cmd=notice ;;
+            esac
+            printf '::%s file=%s,line=%s::%s (%s)\n' "$cmd" "$file" "${ln:-1}" "${msg:-analyze}" "${rule:-analyze}"
+          done
           exit $code
-
-      - name: Upload analyze log on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: analyze-log
-          path: analyze.log
-          if-no-files-found: ignore
 
       - name: Unit & widget tests
         run: flutter test --coverage
