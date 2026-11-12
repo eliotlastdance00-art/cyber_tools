@@ -11,10 +11,10 @@ final class LibraryDocument {
     required this.title,
     required this.sourceType,
     required this.relativePath,
-    this.sha256,
     required this.charCount,
     required this.addedAt,
     required this.lastOpenedAt,
+    this.sha256,
     this.lastSentenceIndex,
   });
 

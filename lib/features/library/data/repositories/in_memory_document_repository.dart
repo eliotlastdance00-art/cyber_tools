@@ -15,8 +15,8 @@ final class InMemoryDocumentRepository implements DocumentRepository {
   void _emit() => _controller.add(_sorted());
 
   List<LibraryDocument> _sorted() {
-    final list = _byId.values.toList();
-    list.sort((a, b) => b.lastOpenedAt.compareTo(a.lastOpenedAt));
+    final list = _byId.values.toList()
+      ..sort((a, b) => b.lastOpenedAt.compareTo(a.lastOpenedAt));
     return List.unmodifiable(list);
   }
 
@@ -71,7 +71,7 @@ final class InMemoryDocumentRepository implements DocumentRepository {
   Future<Result<void>> delete(String id) async {
     try {
       final doc = _byId.remove(id);
-      if (doc?.sha256 != null) _shaToId.remove(doc!.sha256!);
+      if (doc?.sha256 != null) _shaToId.remove(doc!.sha256);
       _emit();
       return const Result<void>.ok(null);
     } catch (e) {

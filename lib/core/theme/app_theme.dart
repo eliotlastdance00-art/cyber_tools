@@ -116,12 +116,14 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.all(Radius.circular(14)),
         ),
       ),
+      // ignore: prefer_const_constructors — ThemeData const issues with extensions
+
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: BrandColors.coral,
-          foregroundColor: Color(0xFF1A0E08),
-          minimumSize: Size(64, 52),
-          shape: RoundedRectangleBorder(
+          foregroundColor: const Color(0xFF1A0E08),
+          minimumSize: const Size(64, 52),
+          shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(12)),
           ),
         ),
