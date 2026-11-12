@@ -10,6 +10,7 @@ import 'package:voicereader/features/library/domain/repositories/document_reposi
 final class InMemoryDocumentRepository implements DocumentRepository {
   final Map<String, LibraryDocument> _byId = {};
   final Map<String, String> _shaToId = {};
+  final Map<String, String> _texts = {};
   final _controller = StreamController<List<LibraryDocument>>.broadcast();
 
   void _emit() => _controller.add(_sorted());
@@ -68,10 +69,33 @@ final class InMemoryDocumentRepository implements DocumentRepository {
   }
 
   @override
+  Future<Result<void>> saveText(String docId, String plainText) async {
+    try {
+      if (!_byId.containsKey(docId)) {
+        return const Result<void>.err(StorageFailure('Document not found for text'));
+      }
+      _texts[docId] = plainText;
+      return const Result<void>.ok(null);
+    } catch (e) {
+      return Result<void>.err(StorageFailure('saveText failed: $e'));
+    }
+  }
+
+  @override
+  Future<Result<String?>> getText(String docId) async {
+    try {
+      return Result<String?>.ok(_texts[docId]);
+    } catch (e) {
+      return Result<String?>.err(StorageFailure('getText failed: $e'));
+    }
+  }
+
+  @override
   Future<Result<void>> delete(String id) async {
     try {
       final doc = _byId.remove(id);
       if (doc?.sha256 != null) _shaToId.remove(doc!.sha256);
+      _texts.remove(id);
       _emit();
       return const Result<void>.ok(null);
     } catch (e) {

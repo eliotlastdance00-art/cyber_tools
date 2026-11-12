@@ -10,7 +10,7 @@ import 'package:voicereader/features/library/domain/repositories/document_reposi
 
 /// Imports a plain text file (txt/md/text) into the library.
 ///
-/// Flow: validate → sha256 → dedupe → copy → count chars → save row → return doc.
+/// Flow: validate → sha256 → dedupe → copy → count chars → save row+text → return doc.
 /// Returns existing doc if SHA-256 matches (no duplicate).
 final class ImportTextUseCase {
   const ImportTextUseCase({
@@ -43,13 +43,10 @@ final class ImportTextUseCase {
 
     // 2. Read + count
     final textRes = await fileService.readAsString(sourceFile.path);
-    // For ImportTextUseCase the sourceFile is the original picked file,
-    // not the imported copy — read directly from it.
     String rawText;
     if (textRes.isOk) {
       rawText = textRes.valueOrNull!;
     } else {
-      // Fallback: read via dart:io directly (e.g. FakeFileService in tests)
       try {
         rawText = await sourceFile.readAsString();
       } catch (e) {
@@ -60,10 +57,6 @@ final class ImportTextUseCase {
     if (rawText.trim().isEmpty) {
       return const Result.err(ValidationFailure('Text file is empty'));
     }
-
-    // Free tier gate — checked here once; Phase 6 enforces via ProEntitlement
-    // use case. Kept as soft limit so tests don't need Pro mock.
-    // Free limit: 1500 chars per doc (enforced in UI, not here as hard fail).
 
     final id = generateUlid();
     final title = p.basenameWithoutExtension(sourceFile.path).trim();
@@ -89,7 +82,13 @@ final class ImportTextUseCase {
     );
 
     final saveRes = await repository.save(doc);
-    return saveRes;
+    if (saveRes.isErr) return saveRes;
+    final saveText = await repository.saveText(doc.id, rawText);
+    if (saveText.isErr) {
+      await repository.delete(doc.id);
+      return Result.err(saveText.failureOrNull!);
+    }
+    return Result.ok(doc);
   }
 
   static const _textExts = {'.txt', '.md', '.text'};

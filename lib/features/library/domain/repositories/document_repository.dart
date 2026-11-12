@@ -10,4 +10,8 @@ abstract interface class DocumentRepository {
   Future<Result<LibraryDocument?>> findBySha256(String sha256);
   Future<Result<void>> updateLastPosition(String id, int sentenceIndex);
   Stream<List<LibraryDocument>> watchAll({String? query});
+
+  // Plain text cache (drift `document_text` table in production).
+  Future<Result<void>> saveText(String docId, String plainText);
+  Future<Result<String?>> getText(String docId);
 }
