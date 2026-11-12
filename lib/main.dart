@@ -11,8 +11,7 @@ void main() {
     () {
       WidgetsFlutterBinding.ensureInitialized();
       // pdfrx needs one-time init before any PdfDocument usage (incl. isolate)
-      // ignore: discarded_futures
-      pdfrxFlutterInitialize();
+      unawaited(pdfrxFlutterInitialize());
 
       // Capture framework errors — in release they would otherwise show
       // a blank/white screen. We log and show a friendly fallback.
