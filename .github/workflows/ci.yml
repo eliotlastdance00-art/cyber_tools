@@ -64,10 +64,10 @@ jobs:
           echo "$output"
           echo "$output" | grep -E '^\s*(error|warning|info|hint)\s*•' | while IFS= read -r line; do
             lvl=$(printf '%s' "$line" | sed -E 's/^\s*(error|warning|info|hint).*/\1/')
-            msg=$(printf '%s' "$line" | sed -E 's/^\s*(error|warning|info|hint)\s*•\s*([^•]+)\s*•.*/\\2/')
-            loc=$(printf '%s' "$line" | sed -n -E 's/.*•\s*([^•]+):[0-9]+:[0-9]+\s*•.*/\\1/p')
+            msg=$(printf '%s' "$line" | sed -E 's/^\s*(error|warning|info|hint)\s*•\s*([^•]+)\s*•.*/\2/')
+            loc=$(printf '%s' "$line" | sed -n -E 's/.*•\s*([^•]+):[0-9]+:[0-9]+\s*•.*/\1/p')
             ln=$(printf '%s' "$line" | sed -n -E 's/.*:([0-9]+):[0-9]+\s*•.*/\1/p')
-            rule=$(printf '%s' "$line" | sed -n -E 's/.*•\s*([a-z_]+)\s*$/\\1/p')
+            rule=$(printf '%s' "$line" | sed -n -E 's/.*•\s*([a-z_]+)\s*$/\1/p')
             file=$(printf '%s' "$loc" | sed -E 's#^/home/runner/work/[^/]+/[^/]+/##')
             case "$lvl" in
               error) cmd=error ;;
