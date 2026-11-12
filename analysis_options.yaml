@@ -21,3 +21,5 @@ linter:
     prefer_const_constructors: false
     use_build_context_synchronously: false
     async_return_with_no_await: false
+    sort_pub_dependencies: false
+    avoid_redundant_argument_values: false

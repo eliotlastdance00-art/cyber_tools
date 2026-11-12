@@ -116,7 +116,6 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.all(Radius.circular(14)),
         ),
       ),
-      // ignore: prefer_const_constructors — ThemeData const issues with extensions
 
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
