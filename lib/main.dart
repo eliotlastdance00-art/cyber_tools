@@ -3,12 +3,16 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:pdfrx/pdfrx.dart';
 import 'package:voicereader/app.dart';
 
 void main() {
   runZonedGuarded<void>(
     () {
       WidgetsFlutterBinding.ensureInitialized();
+      // pdfrx needs one-time init before any PdfDocument usage (incl. isolate)
+      // ignore: discarded_futures
+      pdfrxFlutterInitialize();
 
       // Capture framework errors — in release they would otherwise show
       // a blank/white screen. We log and show a friendly fallback.
