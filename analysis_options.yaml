@@ -26,5 +26,5 @@ linter:
     flutter_style_todos: false
     discarded_futures: false
     unawaited_futures: false
-    avoid_void_async: false
-    inference_failure_on_untyped_parameter: false
+    unnecessary_lambdas: false
+    unawaited_return_in_try_block: false
