@@ -19,6 +19,74 @@ abstract final class BrandColors {
   static const muted = Color(0xFF93A4C4);
 }
 
+/// Spacing tokens — use instead of magic `16`, `24` in widgets.
+@immutable
+class AppSpacing extends ThemeExtension<AppSpacing> {
+  const AppSpacing({
+    required this.xs,
+    required this.sm,
+    required this.md,
+    required this.lg,
+    required this.xl,
+  });
+
+  final double xs;
+  final double sm;
+  final double md;
+  final double lg;
+  final double xl;
+
+  static const standard = AppSpacing(xs: 4, sm: 8, md: 16, lg: 24, xl: 32);
+
+  @override
+  AppSpacing copyWith({double? xs, double? sm, double? md, double? lg, double? xl}) =>
+      AppSpacing(
+        xs: xs ?? this.xs,
+        sm: sm ?? this.sm,
+        md: md ?? this.md,
+        lg: lg ?? this.lg,
+        xl: xl ?? this.xl,
+      );
+
+  @override
+  AppSpacing lerp(ThemeExtension<AppSpacing>? other, double t) {
+    if (other is! AppSpacing) return this;
+    return AppSpacing(
+      xs: xs + (other.xs - xs) * t,
+      sm: sm + (other.sm - sm) * t,
+      md: md + (other.md - md) * t,
+      lg: lg + (other.lg - lg) * t,
+      xl: xl + (other.xl - xl) * t,
+    );
+  }
+}
+
+/// Radius tokens — consistent card/button rounding.
+@immutable
+class AppRadii extends ThemeExtension<AppRadii> {
+  const AppRadii({required this.sm, required this.md, required this.lg});
+
+  final double sm;
+  final double md;
+  final double lg;
+
+  static const standard = AppRadii(sm: 8, md: 12, lg: 14);
+
+  @override
+  AppRadii copyWith({double? sm, double? md, double? lg}) =>
+      AppRadii(sm: sm ?? this.sm, md: md ?? this.md, lg: lg ?? this.lg);
+
+  @override
+  AppRadii lerp(ThemeExtension<AppRadii>? other, double t) {
+    if (other is! AppRadii) return this;
+    return AppRadii(
+      sm: sm + (other.sm - sm) * t,
+      md: md + (other.md - md) * t,
+      lg: lg + (other.lg - lg) * t,
+    );
+  }
+}
+
 abstract final class AppTheme {
   static ThemeData get dark {
     const scheme = ColorScheme.dark(
@@ -35,6 +103,7 @@ abstract final class AppTheme {
     return ThemeData(
       colorScheme: scheme,
       scaffoldBackgroundColor: BrandColors.navy,
+      extensions: const [AppSpacing.standard, AppRadii.standard],
       appBarTheme: const AppBarTheme(
         backgroundColor: BrandColors.navy,
         centerTitle: false,
@@ -47,6 +116,7 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.all(Radius.circular(14)),
         ),
       ),
+
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: BrandColors.coral,
