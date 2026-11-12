@@ -24,3 +24,7 @@ linter:
     sort_pub_dependencies: false
     avoid_redundant_argument_values: false
     flutter_style_todos: false
+    discarded_futures: false
+    unawaited_futures: false
+    avoid_void_async: false
+    inference_failure_on_untyped_parameter: false
