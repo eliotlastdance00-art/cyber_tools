@@ -48,22 +48,11 @@ jobs:
       - name: Pub get
         run: flutter pub get
 
-      - name: Generate code (build_runner)
+      - name: Generate code (build_runner) — skipped until drift/freezed land
         run: |
-          if grep -q "build_runner" pubspec.yaml; then
-            echo "Running build_runner (with 60s timeout)..."
-            timeout 60 dart run build_runner build --delete-conflicting-outputs || {
-              code=$?
-              if [ $code -eq 124 ]; then
-                echo "::warning::build_runner timed out after 60s — no generators, continuing"
-              else
-                echo "::warning::build_runner exit $code — continuing (no generators or already built)"
-              fi
-            }
-            echo "build_runner step done"
-          else
-            echo "No build_runner in pubspec.yaml — skipping"
-          fi
+          echo "Skipping build_runner — no generators in Phase 1/2 (will enable in Phase 2 with drift)"
+          # When drift/riverpod generators are added, re-enable:
+          # dart run build_runner build --delete-conflicting-outputs
 
       - name: Format check
         run: dart format . --output=none --set-exit-if-changed
@@ -118,8 +107,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage
-          path: |
-            coverage/lcov.info
+          path: coverage/lcov.info
           if-no-files-found: ignore
 
       - name: Build debug APK
