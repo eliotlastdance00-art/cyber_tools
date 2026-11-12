@@ -179,6 +179,15 @@ final class FakeFileService implements FileService {
   }
 
   @override
-  Future<Result<String>> sha256Of(File file) async =>
-      Result.ok('fake-sha256-${file.path.hashCode}');
+  Future<Result<String>> sha256Of(File file) async {
+    try {
+      if (await file.exists()) {
+        final bytes = await file.readAsBytes();
+        // Real SHA-256 for dedupe — same content => same hash
+        final digest = sha256.convert(bytes);
+        return Result.ok(digest.toString());
+      }
+    } catch (_) {}
+    return Result.ok('fake-sha256-${file.path.hashCode}');
+  }
 }
