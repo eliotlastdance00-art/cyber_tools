@@ -71,7 +71,7 @@ final class InMemoryDocumentRepository implements DocumentRepository {
   Future<Result<void>> delete(String id) async {
     try {
       final doc = _byId.remove(id);
-      if (doc?.sha256 != null) _shaToId.remove(doc.sha256);
+      if (doc?.sha256 != null) _shaToId.remove(doc!.sha256!);
       _emit();
       return const Result<void>.ok(null);
     } catch (e) {
