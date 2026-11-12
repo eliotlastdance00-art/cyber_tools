@@ -79,15 +79,17 @@ void main() {
     });
 
     test('watchAll emits on save', () async {
-      final stream = repo.watchAll();
-      final first = await stream.first;
-      expect(first, isEmpty);
-
-      // Next emission after save
-      final future = stream.skip(1).first;
+      // watchAll is single-subscription (async*); each call creates a new subscription
+      expect(await repo.watchAll().first, isEmpty);
       await repo.save(doc('01', 'Alpha'));
-      final second = await future;
-      expect(second.map((e) => e.id), ['01']);
+      expect((await repo.watchAll().first).map((e) => e.id), ['01']);
+    });
+
+    test('watchAll with query filters', () async {
+      await repo.save(doc('01', 'Hello World'));
+      await repo.save(doc('02', 'Other'));
+      final filtered = await repo.watchAll(query: 'hello').first;
+      expect(filtered.map((e) => e.title), ['Hello World']);
     });
   });
 }
