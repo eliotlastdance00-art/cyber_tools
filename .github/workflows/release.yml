@@ -20,6 +20,16 @@ on:
         description: 'Optional artifact name suffix (e.g. smoke1)'
         required: false
         default: ''
+      build_mode:
+        description: 'Build mode'
+        required: false
+        default: 'release'
+        type: choice
+        options: [release, debug]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   appbundle:
@@ -38,14 +48,30 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Cache pub & Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: release-${{ runner.os }}-${{ hashFiles('pubspec.yaml', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: release-${{ runner.os }}-
+
       - name: Pub get
         run: flutter pub get
+
+      - name: Generate code
+        run: |
+          if grep -q "build_runner" pubspec.yaml; then
+            dart run build_runner build --delete-conflicting-outputs || echo "::warning::build_runner skipped"
+          fi
 
       - name: Analyze
         run: flutter analyze --fatal-infos
 
       - name: Test
-        run: flutter test
+        run: flutter test --test-randomize-ordering-seed=random
 
       # Release builds are signed with an upload keystore stored as GitHub
       # secrets — NEVER commit it. Until the secrets exist the release build is
@@ -62,30 +88,55 @@ jobs:
       #   env: { KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}, KEY_ALIAS: ${{ secrets.KEY_ALIAS }}, KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }} }
 
       - name: Build App Bundle (Play upload format)
-        run: flutter build appbundle --release
+        if: inputs.build_mode != 'debug'
+        run: flutter build appbundle --release --verbose
 
       - name: Build APK (hand-installable on a phone)
-        run: flutter build apk --release
+        run: |
+          if [ "${{ inputs.build_mode }}" = "debug" ]; then
+            flutter build apk --debug --verbose
+            mkdir -p build/app/outputs/flutter-apk/
+            # copy debug as VoiceReader for consistency
+            cp build/app/outputs/flutter-apk/app-debug.apk build/app/outputs/flutter-apk/app-release.apk || true
+          else
+            flutter build apk --release --verbose
+            flutter build apk --debug --verbose || true
+          fi
 
-      - name: Name artifacts with version + commit
+      - name: Name artifacts with version + commit + metadata
         run: |
           set -euo pipefail
           VER=$(grep -E '^version:' pubspec.yaml | awk '{print $2}' | cut -d+ -f1)
           BASE="voicereader-${VER}-${GITHUB_SHA::7}"
           SUF="${{ github.event.inputs.version_suffix }}"
           if [ -n "$SUF" ]; then BASE="${BASE}-${SUF}"; fi
-          # Artifact names may not contain '/', so sanitise the ref (branch names
-          # like arena/xxx would otherwise break upload-artifact).
           ARTIFACT=$(printf '%s' "$BASE" | tr '/' '-')
           mkdir -p dist
-          cp build/app/outputs/bundle/release/app-release.aab "dist/${BASE}.aab"
+          if [ -f build/app/outputs/bundle/release/app-release.aab ]; then
+            cp build/app/outputs/bundle/release/app-release.aab "dist/${BASE}.aab"
+          fi
           # ONE friendly filename for humans: this is the file people must tap on
           # their phone. The .aab is Play-only and deliberately named so.
-          cp build/app/outputs/flutter-apk/app-release.apk "dist/VoiceReader.apk"
+          if [ -f build/app/outputs/flutter-apk/app-release.apk ]; then
+            cp build/app/outputs/flutter-apk/app-release.apk "dist/VoiceReader.apk"
+            cp build/app/outputs/flutter-apk/app-release.apk "dist/${BASE}.apk"
+          fi
+          if [ -f build/app/outputs/flutter-apk/app-debug.apk ]; then
+            cp build/app/outputs/flutter-apk/app-debug.apk "dist/${BASE}-debug.apk" || true
+          fi
           (cd dist && sha256sum ./* > SHA256SUMS.txt)
           echo "ARTIFACT_NAME=${ARTIFACT}" >> "$GITHUB_ENV"
           ls -lh dist
           cat dist/SHA256SUMS.txt
+          # Build info for traceability
+          {
+            echo "Version: $VER"
+            echo "Commit: $GITHUB_SHA"
+            echo "Ref: $GITHUB_REF"
+            echo "Date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "Flutter: $(flutter --version | head -n1)"
+          } > dist/BUILD_INFO.txt
+          cat dist/BUILD_INFO.txt
 
       - name: Upload AAB + APK as workflow artifacts
         uses: actions/upload-artifact@v4
@@ -93,6 +144,7 @@ jobs:
           name: ${{ env.ARTIFACT_NAME }}
           path: dist/*
           if-no-files-found: error
+          retention-days: 14
 
       # On a tag push, also create a GitHub Release so the APK is reachable from
       # the Releases page without logging in to Actions. Draft on purpose:
@@ -106,9 +158,9 @@ jobs:
           gh release create "${GITHUB_REF_NAME}" \
             --draft \
             --title "VoiceReader ${GITHUB_REF_NAME}" \
-            --notes "Install on Android: download **VoiceReader.apk** below (NOT the .aab — that one is only for Google Play). Verify with SHA256SUMS.txt. If install fails with 'app not installed', uninstall the previous build first (debug keystore changes between builds)." \
-            dist/*.apk dist/*.aab dist/SHA256SUMS.txt \
-          || gh release upload "${GITHUB_REF_NAME}" dist/*.apk dist/*.aab dist/SHA256SUMS.txt --clobber
+            --notes "Install on Android: download **VoiceReader.apk** below (NOT the .aab — that one is only for Google Play). Verify with SHA256SUMS.txt. If install fails with 'app not installed', uninstall the previous build first (debug keystore changes between builds). BUILD_INFO.txt shows commit & Flutter version." \
+            dist/*.apk dist/*.aab dist/SHA256SUMS.txt dist/BUILD_INFO.txt \
+          || gh release upload "${GITHUB_REF_NAME}" dist/*.apk dist/*.aab dist/SHA256SUMS.txt dist/BUILD_INFO.txt --clobber
 
       # Publish to Play internal track once secrets are in place:
       # - uses: r0adkll/upload-google-play@v1

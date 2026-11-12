@@ -9,8 +9,18 @@
 /// * Known abbreviations (e.g., `dr.`, `e.g.`) and single initials (A. B. …)
 ///   do NOT terminate a sentence.
 /// * Decimals (`19.99`) and dotted acronyms (`U.S.A.`) do NOT split.
+///
+/// The critical regex nuance: `[.!?…]+` is only a terminator when the next
+/// char after optional closing brackets is whitespace or end-of-text
+/// (`(?=\s|$)`). That means the *first* dot in `e.g.` (followed by `g`,
+/// not whitespace) never matches — only the final `g.` dot is evaluated,
+/// and its `before` slice contains `e.g.` which is in the abbreviation set.
 library;
 
+// Abbreviations that never end a sentence on their own.
+// Keep lower-cased with trailing dot. Titles like `dr.`/`mr.` are especially
+// sensitive: "Dr. Smith" must stay one sentence even though next word is
+// capitalised. See split logic below for the `inc.`-at-sentence-end edge.
 const _abbreviations = <String>{
   'mr.',
   'mrs.',
@@ -30,7 +40,19 @@ const _abbreviations = <String>{
   'a.m.',
   'p.m.',
   'jen.',
-  'professor.',
+};
+
+// Abbreviations that are *titles* — they should never cause a split even
+// when the next word is capitalised (e.g. "Dr. Smith" is one sentence).
+const _titleAbbreviations = <String>{
+  'mr.',
+  'mrs.',
+  'ms.',
+  'dr.',
+  'prof.',
+  'sr.',
+  'jr.',
+  'st.',
 };
 
 final _sentenceEnd = RegExp(r'''[.!?…]+["'’”»\)\]]*(?=\s|$)''', unicode: true);
@@ -42,14 +64,18 @@ final _dottedAcronym = RegExp(r'^(?:[A-Za-z]\.){2,}$', unicode: true);
 final _singleInitial = RegExp(r'^\p{Lu}\.$', unicode: true);
 final _paragraphBreak = RegExp(r'\n\n+');
 final _whitespaceRun = RegExp(r'\s+');
+final _softHyphen = RegExp('\u00AD');
 
 /// Joins wrapped lines while preserving paragraph boundaries.
 ///
 /// Intentionally does not strip line-final hyphens: a trailing hyphen may be
-/// part of a genuine compound word.
+/// part of a genuine compound word. Soft hyphens (U+00AD from PDF extraction)
+/// are always removed.
 String normalizeDocumentText(String input) {
   if (input.trim().isEmpty) return '';
-  final normalized = input
+  // Remove soft hyphens that PDF extractors inject for line breaks.
+  final withoutSoftHyphen = input.replaceAll(_softHyphen, '');
+  final normalized = withoutSoftHyphen
       .replaceAll('\r\n', '\n')
       .replaceAll('\r', '\n')
       .replaceAll('\f', '\n\n');
@@ -94,7 +120,34 @@ List<TextSentence> splitSentencesInParagraph(
       final word = _trailingWord.firstMatch(before);
       final tokenRaw = word == null ? '' : word.group(0)!;
       final token = tokenRaw.toLowerCase();
-      if (_abbreviations.contains(token)) continue;
+      if (_abbreviations.contains(token)) {
+        // Edge: abbreviation at genuine sentence end, e.g.
+        // "He works at Google Inc. He left." — the `inc.` dot *is*
+        // followed by a new capitalised sentence, so we *should* split.
+        // But titles ("Dr. Smith") must never split. We allow a split
+        // only for non-title abbreviations when the next non-space char
+        // is an uppercase letter (start of a new sentence).
+        if (_titleAbbreviations.contains(token)) continue;
+        final after = paragraph.substring(end).trimLeft();
+        if (after.isNotEmpty) {
+          final nextChar = after[0];
+          // \p{Lu} = uppercase letter (covers Cyrillic Т, Turkmen Ý etc.)
+          final isUpper = RegExp(r'^\p{Lu}$', unicode: true).hasMatch(nextChar);
+          if (!isUpper) continue;
+          // Next is uppercase but could be a proper noun continuing
+          // the same sentence (e.g. "e.g. Baskets" rarely capitalised).
+          // We only split for known sentence-terminal abbreviations:
+          // `inc.`, `etc.`, `fig.`, `no.` — titles and `e.g.`/`i.e.` stay.
+          const terminalAbbreviations = {'inc.', 'etc.', 'fig.', 'no.'};
+          if (!terminalAbbreviations.contains(token)) continue;
+        } else {
+          // Abbreviation at end of paragraph — not a split, it's the
+          // sentence terminator itself. Fall through to _addTrimmed below
+          // would create a spurious empty sentence, so we `continue`
+          // and let the trailing _addTrimmed handle it as one sentence.
+          continue;
+        }
+      }
       if (_dottedAcronym.hasMatch(token)) continue;
       // Single initials (A. Smith) do not end a sentence. The original
       // Python lower-cased the token before testing case, which silently
@@ -136,14 +189,20 @@ void _addTrimmed(
 }
 
 bool _isSpace(int unit) {
-  // Space, tab, LF, CR and friends (\s equivalents for ASCII whitespace).
-  return unit == 0x20 ||
+  // Fast-path ASCII spaces, then fall back to Unicode whitespace check.
+  // Covers U+2000..U+200B (thin/zero-width spaces from PDF), U+202F, U+205F,
+  // U+3000 (ideographic space) etc. which appear in real documents.
+  if (unit == 0x20 ||
       unit == 0x09 ||
       unit == 0x0A ||
       unit == 0x0D ||
       unit == 0x0B ||
       unit == 0x0C ||
-      unit == 0xA0;
+      unit == 0xA0) {
+    return true;
+  }
+  // For any other code unit, test via Unicode \s (covers the rest).
+  return RegExp(r'\s', unicode: true).hasMatch(String.fromCharCode(unit));
 }
 
 /// Splits raw document text into sentences across paragraph boundaries.

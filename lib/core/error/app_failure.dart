@@ -11,6 +11,9 @@ sealed class AppFailure {
   /// Human-readable summary (English; UI may map to localized copy).
   String get message;
 
+  /// Machine-readable code for logging / analytics.
+  String get code => runtimeType.toString();
+
   @override
   bool operator ==(Object other) =>
       runtimeType == other.runtimeType &&
@@ -19,6 +22,9 @@ sealed class AppFailure {
 
   @override
   int get hashCode => Object.hash(runtimeType, message);
+
+  @override
+  String toString() => '$code($message)';
 }
 
 final class StorageFailure extends AppFailure {
